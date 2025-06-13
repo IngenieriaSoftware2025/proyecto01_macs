@@ -16,7 +16,7 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <a class="navbar-brand" href="/proyecto01_macs/">
+            <a class="navbar-brand" href="/proyecto01_macs/inicio">
                 <img src="<?= asset('./images/cit.png') ?>" width="35px'" alt="cit" >
                 Aplicaciones
             </a>
@@ -24,7 +24,7 @@
                 
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0" style="margin: 0;">
                     <li class="nav-item">
-                        <a class="nav-link" aria-current="page" href="/proyecto01_macs/"><i class="bi bi-house-fill me-2"></i>Inicio</a>
+                        <a class="nav-link" aria-current="page" href="/proyecto01_macs/inicio"><i class="bi bi-house-fill me-2"></i>Inicio</a>
                     </li>
 
                     <li class="nav-item">
@@ -45,11 +45,11 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link px-3" style="border: none; background: none;" href="/proyecto01_macs/login">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                        <a class="nav-link px-3" style="background: none; border: none;" href="/proyecto01_macs/asignacionpermisos">
+                            <i class="bi bi-shield-lock-fill me-2"></i>Asignación de Permisos
                         </a>
                     </li>
-  
+
                     <div class="nav-item dropdown " >
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                             <i class="bi bi-gear me-2"></i>Dropdown
@@ -65,9 +65,31 @@
                     </div> 
 
                 </ul> 
-                <div class="col-lg-1 d-grid mb-lg-0 mb-2">
-                    <a href="/proyecto01_macs/" class="btn btn-danger"><i class="bi bi-arrow-bar-left"></i>MENÚ</a>
-                </div>
+                
+                <?php 
+                session_start();
+                if(isset($_SESSION['user'])): 
+                ?>
+                    <div class="d-flex align-items-center me-3">
+                        <span class="text-white me-3">
+                            <i class="bi bi-person-circle me-1"></i>
+                            <?= $_SESSION['user'] ?> (<?= $_SESSION['rol'] ?>)
+                        </span>
+                    </div>
+                    <div class="col-lg-2 d-grid mb-lg-0 mb-2">
+                        <div class="d-flex gap-2">
+                            <a href="/proyecto01_macs/logout" class="btn btn-danger">
+                                <i class="bi bi-box-arrow-right"></i>Salir
+                            </a>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="col-lg-1 d-grid mb-lg-0 mb-2">
+                        <a href="/proyecto01_macs/login" class="btn btn-primary">
+                            <i class="bi bi-box-arrow-in-right"></i>Login
+                        </a>
+                    </div>
+                <?php endif; ?>
 
             
             </div>

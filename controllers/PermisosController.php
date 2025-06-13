@@ -59,9 +59,9 @@ class PermisosController extends ActiveRecord
                 exit;
             }
             
-            $_POST['permiso_app_id'] = filter_var($_POST['permiso_app_id'], FILTER_SANITIZE_NUMBER_INT);
+            $_POST['app_id'] = filter_var($_POST['app_id'], FILTER_SANITIZE_NUMBER_INT);
             
-            if ($_POST['permiso_app_id'] <= 0) {
+            if ($_POST['app_id'] <= 0) {
                 http_response_code(400);
                 echo json_encode([
                     'codigo' => 0,
@@ -69,7 +69,31 @@ class PermisosController extends ActiveRecord
                 ]);
                 exit;
             }
+
+            $_POST['usuario_id'] = filter_var($_POST['usuario_id'], FILTER_SANITIZE_NUMBER_INT);
             
+            if ($_POST['usuario_id'] <= 0) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'Debe seleccionar un usuario válido'
+                ]);
+                exit;
+            }
+
+            $_POST['permiso_usuario_asigno'] = filter_var($_POST['permiso_usuario_asigno'], FILTER_SANITIZE_NUMBER_INT);
+            
+            if ($_POST['permiso_usuario_asigno'] <= 0) {
+                http_response_code(400);
+                echo json_encode([
+                    'codigo' => 0,
+                    'mensaje' => 'Debe especificar quién asigna el permiso'
+                ]);
+                exit;
+            }
+
+            $_POST['permiso_motivo'] = trim(htmlspecialchars($_POST['permiso_motivo']));
+            $_POST['permiso_tipo'] = trim(htmlspecialchars($_POST['permiso_tipo'])) ?: 'FUNCIONAL';
             $_POST['permiso_fecha'] = '';
             
             $permiso = new Permisos($_POST);
@@ -79,14 +103,14 @@ class PermisosController extends ActiveRecord
                 http_response_code(200);
                 echo json_encode([
                     'codigo' => 1,
-                    'mensaje' => 'Permiso registrado correctamente',
+                    'mensaje' => 'Permiso asignado correctamente',
                 ]);
                 exit;
             } else {
                 http_response_code(500);
                 echo json_encode([
                     'codigo' => 0,
-                    'mensaje' => 'Error en registrar el permiso',
+                    'mensaje' => 'Error en asignar el permiso',
                 ]);
                 exit;
             }
@@ -106,17 +130,32 @@ class PermisosController extends ActiveRecord
     {
         try {
             $app_id = isset($_GET['app_id']) ? $_GET['app_id'] : null;
+            $usuario_id = isset($_GET['usuario_id']) ? $_GET['usuario_id'] : null;
 
             $condiciones = ["p.permiso_situacion = 1"];
 
             if ($app_id) {
-                $condiciones[] = "p.permiso_app_id = {$app_id}";
+                $condiciones[] = "p.app_id = {$app_id}";
+            }
+
+            if ($usuario_id) {
+                $condiciones[] = "p.usuario_id = {$usuario_id}";
             }
 
             $where = implode(" AND ", $condiciones);
-            $sql = "SELECT p.*, a.app_nombre_corto FROM permiso p 
-                    INNER JOIN aplicacion a ON p.permiso_app_id = a.app_id 
-                    WHERE $where ORDER BY p.permiso_fecha DESC";
+            $sql = "SELECT 
+                        p.*,
+                        a.app_nombre_corto,
+                        u.usuario_nom1,
+                        u.usuario_ape1,
+                        ua.usuario_nom1 as asigno_nom1,
+                        ua.usuario_ape1 as asigno_ape1
+                    FROM permiso p 
+                    INNER JOIN aplicacion a ON p.app_id = a.app_id 
+                    INNER JOIN usuario u ON p.usuario_id = u.usuario_id
+                    INNER JOIN usuario ua ON p.permiso_usuario_asigno = ua.usuario_id
+                    WHERE $where 
+                    ORDER BY p.permiso_fecha DESC";
             $data = self::fetchArray($sql);
 
             http_response_code(200);
@@ -180,9 +219,9 @@ class PermisosController extends ActiveRecord
             return;
         }
 
-        $_POST['permiso_app_id'] = filter_var($_POST['permiso_app_id'], FILTER_SANITIZE_NUMBER_INT);
+        $_POST['app_id'] = filter_var($_POST['app_id'], FILTER_SANITIZE_NUMBER_INT);
 
-        if ($_POST['permiso_app_id'] <= 0) {
+        if ($_POST['app_id'] <= 0) {
             http_response_code(400);
             echo json_encode([
                 'codigo' => 0,
@@ -191,13 +230,27 @@ class PermisosController extends ActiveRecord
             return;
         }
 
+        $_POST['usuario_id'] = filter_var($_POST['usuario_id'], FILTER_SANITIZE_NUMBER_INT);
+
+        if ($_POST['usuario_id'] <= 0) {
+            http_response_code(400);
+            echo json_encode([
+                'codigo' => 0,
+                'mensaje' => 'Debe seleccionar un usuario válido'
+            ]);
+            return;
+        }
+
         try {
             $data = Permisos::find($id);
             $data->sincronizar([
-                'permiso_app_id' => $_POST['permiso_app_id'],
+                'usuario_id' => $_POST['usuario_id'],
+                'app_id' => $_POST['app_id'],
                 'permiso_nombre' => $_POST['permiso_nombre'],
                 'permiso_clave' => $_POST['permiso_clave'],
                 'permiso_desc' => $_POST['permiso_desc'],
+                'permiso_tipo' => $_POST['permiso_tipo'] ?? 'FUNCIONAL',
+                'permiso_motivo' => $_POST['permiso_motivo'] ?? '',
                 'permiso_situacion' => 1
             ]);
             $data->actualizar();
@@ -205,7 +258,7 @@ class PermisosController extends ActiveRecord
             http_response_code(200);
             echo json_encode([
                 'codigo' => 1,
-                'mensaje' => 'La informacion del permiso ha sido modificada exitosamente'
+                'mensaje' => 'La información del permiso ha sido modificada exitosamente'
             ]);
         } catch (Exception $e) {
             http_response_code(400);
@@ -256,6 +309,32 @@ class PermisosController extends ActiveRecord
             echo json_encode([
                 'codigo' => 0,
                 'mensaje' => 'Error al obtener las aplicaciones',
+                'detalle' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public static function buscarUsuariosAPI()
+    {
+        try {
+            $sql = "SELECT usuario_id, usuario_nom1, usuario_ape1 
+                    FROM usuario 
+                    WHERE usuario_situacion = 1 
+                    ORDER BY usuario_nom1";
+            $data = self::fetchArray($sql);
+
+            http_response_code(200);
+            echo json_encode([
+                'codigo' => 1,
+                'mensaje' => 'Usuarios obtenidos correctamente',
+                'data' => $data
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode([
+                'codigo' => 0,
+                'mensaje' => 'Error al obtener los usuarios',
                 'detalle' => $e->getMessage(),
             ]);
         }

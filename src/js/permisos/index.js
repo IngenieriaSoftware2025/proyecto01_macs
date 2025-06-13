@@ -3,18 +3,19 @@ import Swal from "sweetalert2";
 import { validarFormulario } from '../funciones';
 import DataTable from "datatables.net-bs5";
 import { lenguaje } from "../lenguaje";
-import { data } from "jquery";
 
 const formPermiso = document.getElementById('formPermiso');
 const BtnGuardar = document.getElementById('BtnGuardar');
 const BtnModificar = document.getElementById('BtnModificar');
 const BtnLimpiar = document.getElementById('BtnLimpiar');
 const BtnBuscarPermisos = document.getElementById('BtnBuscarPermisos');
-const selectAplicacion = document.getElementById('permiso_app_id');
+const SelectUsuario = document.getElementById('usuario_id');
+const SelectAplicacion = document.getElementById('app_id');
+const SelectUsuarioAsigno = document.getElementById('permiso_usuario_asigno');
 const seccionTabla = document.getElementById('seccionTabla');
 
-const cargarAplicaciones = async () => {
-    const url = "/proyecto01_macs/permisos/buscarAplicacionesAPI";
+const cargarUsuarios = async () => {
+    const url = `/proyecto01_macs/permisos/buscarUsuariosAPI`;
     const config = {
         method: 'GET'
     }
@@ -25,10 +26,54 @@ const cargarAplicaciones = async () => {
         const { codigo, mensaje, data } = datos;
 
         if (codigo == 1) {
-            selectAplicacion.innerHTML = '<option value="">Seleccione una aplicación</option>';
+            SelectUsuario.innerHTML = '<option value="">Seleccione un usuario</option>';
+            SelectUsuarioAsigno.innerHTML = '<option value="">Seleccione quién asigna</option>';
+            
+            data.forEach(usuario => {
+                const option = document.createElement('option');
+                option.value = usuario.usuario_id;
+                option.textContent = `${usuario.usuario_nom1} ${usuario.usuario_ape1}`;
+                SelectUsuario.appendChild(option);
+                
+                const option2 = document.createElement('option');
+                option2.value = usuario.usuario_id;
+                option2.textContent = `${usuario.usuario_nom1} ${usuario.usuario_ape1}`;
+                SelectUsuarioAsigno.appendChild(option2);
+            });
+        } else {
+            await Swal.fire({
+                position: "center",
+                icon: "info",
+                title: "Error",
+                text: mensaje,
+                showConfirmButton: true,
+            });
+        }
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+const cargarAplicaciones = async () => {
+    const url = `/proyecto01_macs/permisos/buscarAplicacionesAPI`;
+    const config = {
+        method: 'GET'
+    }
+
+    try {
+        const respuesta = await fetch(url, config);
+        const datos = await respuesta.json();
+        const { codigo, mensaje, data } = datos;
+
+        if (codigo == 1) {
+            SelectAplicacion.innerHTML = '<option value="">Seleccione una aplicación</option>';
             
             data.forEach(app => {
-                selectAplicacion.innerHTML += `<option value="${app.app_id}">${app.app_nombre_corto}</option>`;
+                const option = document.createElement('option');
+                option.value = app.app_id;
+                option.textContent = app.app_nombre_corto;
+                SelectAplicacion.appendChild(option);
             });
         } else {
             await Swal.fire({
@@ -162,33 +207,54 @@ const datatable = new DataTable('#TablePermisos', {
         {
             title: 'No.',
             data: 'permiso_id',
-            width: '8%',
+            width: '5%',
             render: (data, type, row, meta) => meta.row + 1
+        },
+        { 
+            title: 'Usuario', 
+            data: 'usuario_nom1',
+            width: '12%',
+            render: (data, type, row) => {
+                return `${row.usuario_nom1} ${row.usuario_ape1}`;
+            }
         },
         { 
             title: 'Aplicación', 
             data: 'app_nombre_corto',
-            width: '15%'
+            width: '10%'
         },
         { 
             title: 'Nombre del Permiso', 
             data: 'permiso_nombre',
-            width: '20%'
+            width: '15%'
         },
         { 
             title: 'Clave del Permiso', 
             data: 'permiso_clave',
-            width: '15%'
+            width: '12%'
+        },
+        { 
+            title: 'Tipo', 
+            data: 'permiso_tipo',
+            width: '8%'
         },
         { 
             title: 'Descripción', 
             data: 'permiso_desc',
-            width: '25%'
+            width: '15%'
+        },
+        {
+            title: 'Asignado por',
+            data: 'asigno_nom1',
+            width: '12%',
+            render: (data, type, row) => {
+                return `${row.asigno_nom1} ${row.asigno_ape1}`;
+            }
         },
         {
             title: 'Situación',
             data: 'permiso_situacion',
-            width: '10%',
+            width: '8%',
             render: (data, type, row) => {
                 return data == 1 ? "ACTIVO" : "INACTIVO";
             }
@@ -196,7 +262,7 @@ const datatable = new DataTable('#TablePermisos', {
         {
             title: 'Acciones',
             data: 'permiso_id',
-            width: '7%',
+            width: '13%',
             searchable: false,
             orderable: false,
             render: (data, type, row, meta) => {
@@ -204,10 +270,14 @@ const datatable = new DataTable('#TablePermisos', {
                  <div class='d-flex justify-content-center'>
                      <button class='btn btn-warning modificar mx-1' 
                          data-id="${data}" 
-                         data-app-id="${row.permiso_app_id || ''}"  
+                         data-usuario="${row.usuario_id || ''}"  
+                         data-app="${row.app_id || ''}"  
                          data-nombre="${row.permiso_nombre || ''}"  
                          data-clave="${row.permiso_clave || ''}"  
                          data-desc="${row.permiso_desc || ''}"
+                         data-tipo="${row.permiso_tipo || ''}"
+                         data-asigno="${row.permiso_usuario_asigno || ''}"
+                         data-motivo="${row.permiso_motivo || ''}"
                          title="Modificar">
                          <i class='bi bi-pencil-square me-1'></i> Modificar
                      </button>
@@ -226,10 +296,14 @@ const llenarFormulario = (event) => {
     const datos = event.currentTarget.dataset;
 
     document.getElementById('permiso_id').value = datos.id;
-    document.getElementById('permiso_app_id').value = datos.appId;
+    document.getElementById('usuario_id').value = datos.usuario;
+    document.getElementById('app_id').value = datos.app;
     document.getElementById('permiso_nombre').value = datos.nombre;
     document.getElementById('permiso_clave').value = datos.clave;
     document.getElementById('permiso_desc').value = datos.desc;
+    document.getElementById('permiso_tipo').value = datos.tipo;
+    document.getElementById('permiso_usuario_asigno').value = datos.asigno;
+    document.getElementById('permiso_motivo').value = datos.motivo;
 
     BtnGuardar.classList.add('d-none');
     BtnModificar.classList.remove('d-none');
@@ -352,6 +426,9 @@ const EliminarPermisos = async (e) => {
     }
 }
 
+cargarUsuarios();
+cargarAplicaciones();
+
 datatable.on('click', '.eliminar', EliminarPermisos);
 datatable.on('click', '.modificar', llenarFormulario);
 formPermiso.addEventListener('submit', guardarPermiso);
@@ -359,5 +436,3 @@ formPermiso.addEventListener('submit', guardarPermiso);
 BtnLimpiar.addEventListener('click', limpiarTodo);
 BtnModificar.addEventListener('click', ModificarPermiso);
 BtnBuscarPermisos.addEventListener('click', MostrarTabla);
-
-cargarAplicaciones();

@@ -60,7 +60,16 @@
 </style>
 <body>
     <div class="header">
-        <div class="logo">¡Bienvenido al Sistema MACS!</div>
+        <?php 
+        session_start();
+        if(isset($_SESSION['user']) && isset($_SESSION['rol'])) {
+            echo "<div style='background: rgba(128,128,128,0.2); padding: 10px; margin: 20px 0; text-align: center; border-radius: 10px; display: inline-block;'>";
+            echo "<strong>USUARIO EN SESIÓN:</strong> " . $_SESSION['user'] . "<br>";
+            echo "<strong>ROL ASIGNADO:</strong> " . $_SESSION['rol'];
+            echo "</div>";
+        }
+        ?>
+    <div class="logo">¡Bienvenido al Sistema MACS!</div>
     </div>
     
     <div class="container">
@@ -77,7 +86,7 @@
                 <h2 class="text-uppercase fw-bold">Módulos del Sistema</h2>
                 <p class="text-muted">Gestiona todos los aspectos de administración desde una sola plataforma.</p>
             </div>
-            <div class="col-md-4 mb-4">
+            <div class="col-md-3 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-img-top product-img">
                         <img src="https://img.freepik.com/vector-premium/usuarios-grupo-personas-icono-perfil-usuario_24877-40756.jpg" alt="Gestión de Usuarios" style="max-width:100%; max-height:100%; border-radius:10px;">
@@ -89,7 +98,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 mb-4">
+            <div class="col-md-3 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-img-top product-img">
                       <img src="https://img.freepik.com/vector-gratis/diseno-multimedia-color_1284-883.jpg?semt=ais_items_boosted&w=740" alt="aplicaciones" style="max-width:100%; max-height:100%; border-radius:10px;">
@@ -101,7 +110,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 mb-4">
+            <div class="col-md-3 mb-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-img-top product-img">
                       <img src="https://img.freepik.com/vector-gratis/desarrollo-aplicaciones-moviles_24908-58350.jpg?semt=ais_hybrid&w=740" alt="permisos" style="max-width:100%; max-height:100%; border-radius:10px;">
@@ -110,6 +119,18 @@
                         <h5 class="card-title fw-bold">Sistema de Permisos</h5>
                         <p class="card-text text-muted">Controla el acceso y gestiona permisos por aplicación de forma segura.</p>
                         <a href="/proyecto01_macs/permisos" class="btn btn-primary">Acceder</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-img-top product-img">
+                      <img src="https://static.vecteezy.com/system/resources/previews/005/190/843/non_2x/acquiring-permits-concept-icon-obtaining-license-idea-thin-line-illustration-getting-approval-legal-documents-and-permissions-formal-application-isolated-outline-drawing-editable-stroke-vector.jpg" alt="permisos" style="max-width:100%; max-height:100%; border-radius:10px;">
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="card-title fw-bold">Asignación de Permisos</h5>
+                        <p class="card-text text-muted">Asigna permisos específicos a usuarios para control de acceso granular.</p>
+                        <a href="/proyecto01_macs/asignacionpermisos" class="btn btn-primary">Acceder</a>
                     </div>
                 </div>
             </div>
